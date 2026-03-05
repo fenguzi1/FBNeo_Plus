@@ -38,7 +38,7 @@ jobs:
           display_name = "Arcade (FBNeo Plus)"
           authors = "Team FBNeo, lrf739146825 & fenguzi"
           supported_extensions = "zip|7z|cue|ccd|dat|neogeo"
-          corename = "fbneo.plus.libretro"
+          corename = "FBNeo Plus"
           license = "Non-commercial"
           permissions = ""
           display_version = "v1.1.2"
@@ -47,7 +47,7 @@ jobs:
           # Hardware Information
           manufacturer = "Various"
           systemname = "Arcade (various)"
-          systemid = "fb_alpha"
+          systemid = "fbneo_plus"
 
           # Libretro Features
           savestate = "true"
