@@ -31,9 +31,10 @@ jobs:
           
           find . -name "*.dylib" -exec cp {} ${{ github.workspace }}/fbneo.plus.libretro \;
           
-      - name: Create Info File
+- name: Create Info File
         run: |
           cat <<EOF > fbneo.plus.libretro.info
+          # Software Information
           display_name = "Arcade (FBNeo Plus)"
           authors = "Team FBNeo, lrf739146825 & fenguzi"
           supported_extensions = "zip|7z|cue|ccd|dat|neogeo"
@@ -42,9 +43,13 @@ jobs:
           permissions = ""
           display_version = "v1.1.2"
           categories = "Emulator"
+
+          # Hardware Information
           manufacturer = "Various"
           systemname = "Arcade (various)"
           systemid = "fb_alpha"
+
+          # Libretro Features
           savestate = "true"
           savestate_features = "deterministic"
           cheats = "true"
@@ -60,6 +65,8 @@ jobs:
           disk_control = "false"
           database_match_archive_member = "false"
           database = "FBNeo - Arcade Games"
+          
+          # BIOS / Firmware
           firmware_count = 23
           firmware0_desc = "fbneo/neogeo.zip (Neo Geo BIOS)"
           firmware0_path = "fbneo/neogeo.zip"
@@ -130,8 +137,9 @@ jobs:
           firmware22_desc = "fbneo/hiscore.dat (High Score support database)"
           firmware22_path = "fbneo/hiscore.dat"
           firmware22_opt = "true"
-          notes = "(!) Optimized iOS build by fenguzi. Supporting specialized hacks.|(!) The BIOS files can also be inside the ROM directory or the root of SYSTEM directory."
-          description = "FinalBurn Neo Plus - Custom iOS build by fenguzi. Compatible with specialized ROM hacks."
+          
+          notes = "(!) Optimized for iOS. Supports NeoGeo/PGM/CPS1/NES combination buttons (L1/R1/L2/R2). Features: IPS/Romdata support, Ignore CRC, compressed Cheat.7z/zip support, and zero-freeze cheat loading."
+          description = "FBNeo Plus - Specialized for iOS with Macro Buttons (NeoGeo/PGM/CPS1/NES) and advanced Hack/Cheat support. (Sync: 2025-08-30)"
           EOF
 
       - name: Upload Artifacts
