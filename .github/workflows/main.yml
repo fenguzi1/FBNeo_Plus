@@ -7,32 +7,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive # 自动拉取可能存在的子模块
+          submodules: recursive
 
-      - name: Build and Package
+      - name: Build Core
         run: |
-          # 1. 全自动寻找 Makefile 所在的准确位置
-          echo "Scanning for Makefile..."
-          # 查找包含 libretro 的 Makefile
-          MAKEFILE_PATH=$(find . -name "*Makefile.libretro*" | head -n 1)
-          
-          if [ -z "$MAKEFILE_PATH" ]; then
-            echo "Error: Could not find any libretro Makefile!"
-            ls -R # 找不到就打印全量目录结构方便我帮你分析
-            exit 1
+          # 1. 尝试进入 libretro 目录
+          # 根据日志，源码应该在 src 目录下
+          if [ -d "src/burner/libretro" ]; then
+            cd src/burner/libretro
+          elif [ -d "src/libretro" ]; then
+            cd src/libretro
           fi
           
-          MAKEFILE_DIR=$(dirname "$MAKEFILE_PATH")
-          MAKEFILE_NAME=$(basename "$MAKEFILE_PATH")
-          echo "Found $MAKEFILE_NAME in: $MAKEFILE_DIR"
+          echo "Current Dir: $(pwd)"
           
-          # 2. 进入该目录并执行编译
-          cd "$MAKEFILE_DIR"
-          make -f "$MAKEFILE_NAME" platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          # 2. 强行执行编译
+          # 如果找不到 Makefile.libretro，就尝试用通用的 make 指令
+          # 很多修改版可能直接用了主 Makefile 并通过参数切换
+          if [ -f "Makefile.libretro" ]; then
+             make -f Makefile.libretro platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          elif [ -f "Makefile" ]; then
+             make platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          else
+             # 如果实在没有，就回到根目录用主 Makefile 尝试编译 libretro 目标
+             cd ${{ github.workspace }}
+             make -f makefile.sdl platform=ios-arm64 -j$(sysctl -n hw.ncpu) || make platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          fi
           
-          # 3. 寻找生成的 .dylib 并提取到根目录
-          echo "Searching for compiled core..."
-          find . -name "*.dylib" -exec mv {} "${{ github.workspace }}/fbneo_plus" \;
+          # 3. 提取编译出的文件
+          find ${{ github.workspace }} -name "*.dylib" -exec mv {} ${{ github.workspace }}/fbneo_plus \;
           
       - name: Create Info File
         run: |
@@ -41,14 +44,8 @@ jobs:
           authors = "Team FBNeo & lrf739146825"
           supported_extensions = "zip|7z|dat|neogeo"
           corename = "FBNeo Plus"
-          manufacturer = "Various"
-          categories = "Emulator"
           systemname = "Arcade (various)"
-          database = "FBNeo - Arcade Games"
-          license = "Non-commercial"
-          permissions = ""
           display_version = "v1.0.0.3"
-          supports_no_game = "false"
           EOF
 
       - name: Upload Artifacts
