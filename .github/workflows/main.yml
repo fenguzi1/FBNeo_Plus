@@ -6,19 +6,36 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          submodules: recursive # 自动拉取可能存在的子模块
+
       - name: Build and Package
         run: |
-          # 1. 直接进入核心源码目录并编译
-          # 我们使用 -C 参数直接指定目录，这样更稳
-          echo "Starting build..."
-          make -C src/burner/libretro -f Makefile.libretro platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          # 1. 全自动寻找 Makefile 所在的准确位置
+          echo "Scanning for Makefile..."
+          # 查找包含 libretro 的 Makefile
+          MAKEFILE_PATH=$(find . -name "*Makefile.libretro*" | head -n 1)
           
-          # 2. 将生成的核心重命名并移动到根目录
-          # 刚才日志确认了路径就在 src/burner/libretro
-          mv src/burner/libretro/fbneo_libretro_ios.dylib ./fbneo_plus
+          if [ -z "$MAKEFILE_PATH" ]; then
+            echo "Error: Could not find any libretro Makefile!"
+            ls -R # 找不到就打印全量目录结构方便我帮你分析
+            exit 1
+          fi
           
-          # 3. 创建 Info 文件
+          MAKEFILE_DIR=$(dirname "$MAKEFILE_PATH")
+          MAKEFILE_NAME=$(basename "$MAKEFILE_PATH")
+          echo "Found $MAKEFILE_NAME in: $MAKEFILE_DIR"
+          
+          # 2. 进入该目录并执行编译
+          cd "$MAKEFILE_DIR"
+          make -f "$MAKEFILE_NAME" platform=ios-arm64 -j$(sysctl -n hw.ncpu)
+          
+          # 3. 寻找生成的 .dylib 并提取到根目录
+          echo "Searching for compiled core..."
+          find . -name "*.dylib" -exec mv {} "${{ github.workspace }}/fbneo_plus" \;
+          
+      - name: Create Info File
+        run: |
           cat <<EOF > fbneo_plus.info
           display_name = "Arcade (FBNeo Plus - Hack Edition)"
           authors = "Team FBNeo & lrf739146825"
